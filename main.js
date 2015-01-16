@@ -26,13 +26,17 @@ $(document).ready(function() {
 		var e = 0;
 		//Cayley-Dickson construction in modulo order is e1,e2,e5,e3,e7,e6,-e4
 		//alternating every-other-one is the following:
-		var indexes = [1,5,7,-4,2,3,6,0];
+		var indexes = [1,5,7,4,2,3,6,0];
 		for (var j = 0; j < repHeight; ++j) {
 			for (var i = 0; i < repWidth; ++i) {
-				ctx.font = '64px monospace';
-				ctx.fillText('e', (i + .4) * textWidth, (j + .4) * textHeight - 8);
-				ctx.font = '32px monospace';
-				ctx.fillText(indexes[e], (i + .75) * textWidth, (j + .8) * textHeight - 8);
+				ctx.font = Math.floor(textWidth*.7)+'px monospace';
+				ctx.fillText('e', (i + .5) * textWidth, (j + .4) * textHeight);
+				ctx.font = Math.floor(textWidth*.35)+'px monospace';
+				ctx.fillText(indexes[e], (i + .8) * textWidth, (j + .8) * textHeight - 8);
+				if (indexes[e] === 4) {	//four is negative
+					ctx.font = Math.floor(textWidth*.4)+'px monospace';
+					ctx.fillText('-', (i + .175) * textWidth, (j + .4) * textHeight);
+				}
 				++e;
 			}
 		}
@@ -55,6 +59,7 @@ $(document).ready(function() {
 	gl.enable(gl.DEPTH_TEST);
 
 	glutil.view.pos[2] = 2;
+	glutil.view.fovY = 60;
 	glutil.view.zNear = .1;
 	glutil.view.zFar = 100;
 	glutil.updateProjection();
@@ -157,7 +162,7 @@ void main() {
 		float letter;
 		vec2 letterOffset;
 		
-		letter = floor(mod1(u/7.)*7.);
+		letter = floor(mod1((u-.5)/7.)*7.);
 		letterOffset = vec2(mod(letter, 4.) * .25, floor(letter / 4.) * .5);
 		tc = 5. * vec2(3./2. * mod1(u + .5 / 5. * 2. / 3.), v);
 		len = length(tc-.5)/.5;
@@ -193,7 +198,7 @@ void main() {
 	if (ic == 0.) {
 		gl_FragColor = vec4(1., 0., 0., 1.);
 	} else {
-		discard;//gl_FragColor = vec4(0., 1., 0., 1.);
+		discard;
 	}
 
 	//apply diffuse lighting
