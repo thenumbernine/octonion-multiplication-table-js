@@ -6,6 +6,52 @@ $(document).ready(function() {
 	glutil = new GLUtil({canvas:canvas});
 	gl = glutil.context;
 
+	var textTex;
+	(function(){
+		var textureCanvas = $('<canvas>')
+			.appendTo(document.body)
+			.get(0);
+		var textWidth = 64;
+		var textHeight = 64;
+		var repWidth = 4;
+		var repHeight = 2;
+		textureCanvas.width = textWidth * repWidth;
+		textureCanvas.height = textHeight * repHeight;
+		var ctx = textureCanvas.getContext('2d');
+		ctx.fillStyle = '#ffffff';
+		ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+		ctx.fillStyle = '#000000';
+		ctx.textAlign = 'center';
+		ctx.textBaseline = 'middle';
+		var e = 0;
+		//Cayley-Dickson construction in modulo order is e1,e2,e5,e3,e7,e6,-e4
+		//alternating every-other-one is the following:
+		var indexes = [1,5,7,-4,2,3,6,0];
+		for (var j = 0; j < repHeight; ++j) {
+			for (var i = 0; i < repWidth; ++i) {
+				ctx.font = '64px monospace';
+				ctx.fillText('e', (i + .4) * textWidth, (j + .4) * textHeight - 8);
+				ctx.font = '32px monospace';
+				ctx.fillText(indexes[e], (i + .75) * textWidth, (j + .8) * textHeight - 8);
+				++e;
+			}
+		}
+	
+		textTex = new glutil.Texture2D({
+			level : 0,
+			internalFormat : gl.RGBA,
+			format : gl.RGBA,
+			type : gl.UNSIGNED_BYTE,
+			data : ctx.canvas,
+			minFilter : gl.LINEAR_MIPMAP_LINEAR,
+			magFilter : gl.LINEAR,
+			generateMipmap : true,
+		});
+		
+		$(textureCanvas).remove();
+	})();
+
+	gl.clearColor(1,1,1,1);
 	gl.enable(gl.DEPTH_TEST);
 
 	glutil.view.pos[2] = 2;
@@ -73,39 +119,96 @@ vec3 fragToScreen(vec3 fragCoord) {
 	return screenCoord;
 }
 
+#if 0
+//  (0,1)
+//       +---+---+
+//       |\_               <- upper 1: y-1 = (0-1)/(3/2-0)(x-0) <=> y = 1 - 2*x/3
+//       |\ \_     
+//       | |  \            <- lower line: y-1 = (0-1)/(1/2-0)(x-0) <=> y = 1 - 2*x
+//       +-+---+---+
+//  (0,0)  ^   ^
+//     (1/2,0) |
+//           (3/2,0)
+#endif
+
+uniform float offset;
+
+uniform sampler2D textTex;
+
+float mod1(float x) { return x - floor(x); }
+
 void main() {
+	float u = texcoord.x;
+	float v = texcoord.y;
+
+	// determine septant here
+	
+	u *= .5;
+	if (gl_FrontFacing) {
+		u += .5;
+		v = 1. - v;
+	}
+	u = mod1(u - offset);
+	u = u * 7.;
+
+	{
+		vec2 tc;
+		float len;
+		float letter;
+		vec2 letterOffset;
+		
+		letter = floor(mod1(u/7.)*7.);
+		letterOffset = vec2(mod(letter, 4.) * .25, floor(letter / 4.) * .5);
+		tc = 5. * vec2(3./2. * mod1(u + .5 / 5. * 2. / 3.), v);
+		len = length(tc-.5)/.5;
+		if (len <= 1.) {
+			if (len <= .95) {
+				tc.x = 1. - tc.x;
+				gl_FragColor = texture2D(textTex, tc * vec2(.25, .5) + letterOffset);
+			} else { 
+				gl_FragColor = vec4(0.);
+			}
+			return;
+		}
+		
+		letter = floor(mod1((u+3.)/7.)*7.);
+		letterOffset = vec2(mod(letter, 4.) * .25, floor(letter / 4.) * .5);
+		tc = 5. * vec2(3./2. * mod1(u - .5 + .5 / 5. * 2. / 3.), v - .8);
+		len = length(tc-.5)/.5;
+		if (len <= 1.) {
+			if (len <= .95) {
+				tc.x = 1. - tc.x;
+				gl_FragColor = texture2D(textTex, tc * vec2(.25, .5) + letterOffset);
+			} else {
+				gl_FragColor = vec4(0.);
+			}
+			return;
+		}
+	}
+
+	float ix = floor(3./2.*v + u);
+	float iy = floor(.5 * v + u);
+	float ic = mod1(.5 * (ix + iy));
+
+	if (ic == 0.) {
+		gl_FragColor = vec4(1., 0., 0., 1.);
+	} else {
+		discard;//gl_FragColor = vec4(0., 1., 0., 1.);
+	}
+
+	//apply diffuse lighting
 	vec3 screenCoord = fragToScreen(gl_FragCoord.xyz);
 	vec3 s = dFdx(screenCoord);
 	vec3 t = dFdy(screenCoord);
 	vec3 n = normalize(cross(s, t));
 	float l = max(n.z, .3);
-
-	float u = texcoord.x;
-	float v = texcoord.y;
-
-	vec3 color = vec3(1., 0., 0.);
-
-	// determine septant here
-	
-	float f = u * .5;
-	if (gl_FrontFacing) f += .5;
-
-	f = fract(f * mix(3., 4., v));
-
-	const float thickness = .005;	//half of thickness
-	if (-thickness < f && f < thickness) {
-		gl_FragColor = vec4(0., 0., 0., 1.);
-	} else if (-thickness < v - f && v - f < thickness) {
-		gl_FragColor = vec4(0., 0., 0., 1.);
-	} else if (v - f < 0.) {
-		//going right this is the first lower right triangle
-		gl_FragColor = vec4(l * vec3(f - v, 1. - f, v), 1.);
-	} else {
-		//going right this is the first upper left triangle
-		gl_FragColor = vec4(l * vec3(1. - v, f, v - f), 1.);
-	}
+	gl_FragColor *= l;
 }
 */}),
+		uniforms : {
+			offset : 0,
+			textTex : 0
+		},
 	});
 
 	var xRes = 200;
@@ -145,12 +248,14 @@ void main() {
 			attrs : {
 				vertex : vertexBuffer,
 			},
+			texs : [textTex],
 			parent : mobiusStripObj
 		});
 	}
 
 	var tmpQ = quat.create();
 	var lastMouseRot = quat.create();
+	var offset = 0;
 	mouse = new Mouse3D({
 		pressObj : canvas,
 		move : function(dx,dy) {
@@ -166,10 +271,18 @@ void main() {
 			
 			glutil.draw();
 		},
-		zoom : function(dz) {
-			glutil.view.fovY *= Math.exp(-.0003 * dz);
-			glutil.view.fovY = Math.clamp(glutil.view.fovY, 1, 179);
-			glutil.updateProjection();
+		zoom : function(dz, method) {
+			offset += .0001 * dz;
+			if (method == 'wheel') {
+				$.each(mobiusStripObj.children, function(i,child) {
+					child.uniforms.offset = offset;
+					child.uniforms.textTex = 0;
+				});
+			} else {	//click+drag?
+				glutil.view.fovY *= Math.exp(-.0003 * dz);
+				glutil.view.fovY = Math.clamp(glutil.view.fovY, 1, 179);
+				glutil.updateProjection();
+			}
 			glutil.draw();
 		}
 	});
