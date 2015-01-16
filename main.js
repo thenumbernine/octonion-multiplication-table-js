@@ -2,9 +2,14 @@ var glutil;
 var gl;
 
 $(document).ready(function() {
-	var canvas = $('#canvas').get(0);
-	glutil = new GLUtil({canvas:canvas});
-	gl = glutil.context;
+	try {
+		var canvas = $('#canvas').get(0);
+		glutil = new GLUtil({canvas:canvas});
+		gl = glutil.context;
+	} catch (e) {
+		$('#canvas').remove();
+		$('#webglfail').show();
+	}
 
 	var textTex;
 	(function(){
