@@ -7,6 +7,7 @@ $(document).ready(function() {
 		glutil = new GLUtil({canvas:canvas});
 		gl = glutil.context;
 	} catch (e) {
+		console.log('caught '+e);
 		$('#canvas').remove();
 		$('#webglfail').show();
 	}
