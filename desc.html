@@ -14,23 +14,33 @@
 	<br>
 	<img width=800 height=600 src='images/screenshot.png'></img><br>
 </div>
-<div class='entry'>
-Each red triangle represents a quaternionic triplet.<br>
-A right-handed rotation around the triangle follows the multiplication identities.<br>
-For example, the triangle \( e_1, e_2, e_3 \) represents the identity \( e_1 \cdot e_2 = e_3 \).<br>
-<canvas id='canvas' width=800 height=600 style='margin:auto'></canvas><br>
-
-Click and drag to rotate<br>
-Shift + click and drag to zoom<br>
-Mouse wheel to scroll texture<br>
-
-<!-- these following are included for each file ... but now that I got rid of the WebGL stuff in SocialBrowsing, do they need to be?
-<script type='text/javascript' src='/js/jquery-1.11.1.min.js'></script>
-<script type='text/javascript' src='/js/util.js'></script>
-<script type='text/javascript' src='/js/gl-matrix.2.2.0.min.js'></script>
-<script type='text/javascript' src='/js/gl-util.js'></script>
-<script type='text/javascript' src='/js/mouse3d.js'></script>
--->
-<script type='text/javascript' src='main.js'></script>
+	
 <script type='text/javascript' src='/MathJax-2.4-latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML'></script>
+
+<div class='entry'>
+
+	<div style='width:800px; text-align:right; font-size:10pt; opacity:.7; line-height:1.2em'>
+		Click and drag to rotate<br>
+		Shift + click and drag to zoom<br>
+		Mouse wheel to scroll texture<br>
+	</div>
+	<canvas id='canvas' width=800 height=600 style='margin:auto'></canvas><br>
+
+	Here is the <a href='https://en.wikipedia.org/wiki/Octonion'>octonion</a> multiplication table drawn on a <a href='https://en.wikipedia.org/wiki/M%C3%B6bius_strip'>Möbius strip</a>.<br>
+	Each red triangle represents a <a href='https://en.wikipedia.org/wiki/Quaternion'>quaternionic</a> triplet.<br>
+	A right-handed rotation around the triangle follows the multiplication identities.<br>
+	So the triangle \( e_1, e_2, e_3 \) represents the identities \( e_1 \cdot e_2 = e_3 \), \(e_2 \cdot e_3 = e_1\), and \(e_3 \cdot e_1 = e_2\).<br>
+	<br>
+	The vertices match up on either side of the Möbius strip.<br>
+	On alternating sides are triangles skewed in opposing directions.<br>
+	<br>
+
+	<!-- these following are included for each file ... but now that I got rid of the WebGL stuff in SocialBrowsing, do they need to be?
+	<script type='text/javascript' src='/js/jquery-1.11.1.min.js'></script>
+	<script type='text/javascript' src='/js/util.js'></script>
+	<script type='text/javascript' src='/js/gl-matrix.2.2.0.min.js'></script>
+	<script type='text/javascript' src='/js/gl-util.js'></script>
+	<script type='text/javascript' src='/js/mouse3d.js'></script>
+	-->
+	<script type='text/javascript' src='main.js'></script>
 </div>
