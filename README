@@ -1,5 +1,7 @@
 octonion multiplication table
 
+http://christopheremoore.net/octonion-multiplication-table/
+
 each of the following imaginary basis elements are alternating vertices on a triangulized Mobius strip: {e1, e2, e5, e3, e7, e6, -e4}
 
 the multiplicaiton table is as follows, derived using Cayley-Dickson construction 
