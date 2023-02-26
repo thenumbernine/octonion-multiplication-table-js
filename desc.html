@@ -1,21 +1,22 @@
 <div id='webglfail' style='display:none'>
 	Sorry, your browser does not support WebGL<br>
-	Try one of these other, better browsers:<br>
-	<a href='http://www.google.com/chrome'>Chrome</a><br>
-	<a href='http://www.mozilla.org/firefox'>Firefox</a><br>
-	<a href='http://www.apple.com/safari'>Safari</a><br>
-	<b>Opera Users:</b><br>
-	Enter "opera:config" in the address bar.<br>
-	In the "User Prefs" section set both "Enable Hardware Acceleration" and "Enable WebGL" to "1" and then click "Save".<br>
-	It is still buggy.<br>
-	<b>IE Users:</b><br>
-	Sorry guys, IE doesn't plan to support WebGL.<br>
-	Consider using a more <a href='http://www.w3schools.com/browsers/browsers_stats.asp'>standard compliant</a> browser.<br>
 	<br>
 	<img width=800 height=600 src='images/screenshot.png'></img><br>
 </div>
 	
-<script type='text/javascript' src='/MathJax/MathJax.js?config=TeX-AMS-MML_HTMLorMML'></script>
+<script type="text/javascript">
+// mathjax config
+// https://docs.mathjax.org/en/latest/web/configuration.html
+MathJax = {
+	tex: {
+		inlineMath: [['$', '$'], ['\\(', '\\)']]
+	},
+	svg: {
+		fontCache: 'global'
+	}
+};
+</script>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
 
 <div class='entry'>
 
