@@ -1,81 +1,82 @@
-var glutil;
-var gl;
+import {quat} from '/js/gl-matrix-3.4.1/index.js';
+import {DOM, getIDs, removeFromParent, show} from '/js/util.js';
+import {GLUtil} from '/js/gl-util.js';
+import {Mouse3D} from '/js/mouse3d.js';
+const ids = getIDs();
 
-$(document).ready(function() {
-	try {
-		var canvas = $('#canvas').get(0);
-		glutil = new GLUtil({canvas:canvas});
-		gl = glutil.context;
-	} catch (e) {
-		console.log('caught '+e);
-		$('#canvas').remove();
-		$('#webglfail').show();
+let glutil, gl;
+const canvas = ids.canvas;
+
+try {
+	glutil = new GLUtil({canvas:canvas});
+	gl = glutil.context;
+} catch (e) {
+	console.log('caught',e);
+	removeFromParent(ids.canvas);
+	show(ids.webglfail);
+}
+
+let textTex;
+{
+	const textureCanvas = DOM('canvas', {appendTo:document.body});
+	const textWidth = 64;
+	const textHeight = 64;
+	const repWidth = 4;
+	const repHeight = 2;
+	textureCanvas.width = textWidth * repWidth;
+	textureCanvas.height = textHeight * repHeight;
+	const ctx = textureCanvas.getContext('2d');
+	ctx.fillStyle = '#ffffff';
+	ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+	ctx.fillStyle = '#000000';
+	ctx.textAlign = 'center';
+	ctx.textBaseline = 'middle';
+	let e = 0;
+	//Cayley-Dickson construction in modulo order is e1,e2,e5,e3,e7,e6,-e4
+	//alternating every-other-one is the following:
+	const indexes = [1,5,7,4,2,3,6,0];
+	for (let j = 0; j < repHeight; ++j) {
+		for (let i = 0; i < repWidth; ++i) {
+			ctx.font = Math.floor(textWidth*.7)+'px monospace';
+			ctx.fillText('e', (i + .5) * textWidth, (j + .4) * textHeight);
+			ctx.font = Math.floor(textWidth*.35)+'px monospace';
+			ctx.fillText(indexes[e], (i + .8) * textWidth, (j + .8) * textHeight - 8);
+			if (indexes[e] === 4) {	//four is negative
+				ctx.font = Math.floor(textWidth*.4)+'px monospace';
+				ctx.fillText('-', (i + .175) * textWidth, (j + .4) * textHeight);
+			}
+			++e;
+		}
 	}
 
-	var textTex;
-	(function(){
-		var textureCanvas = $('<canvas>')
-			.appendTo(document.body)
-			.get(0);
-		var textWidth = 64;
-		var textHeight = 64;
-		var repWidth = 4;
-		var repHeight = 2;
-		textureCanvas.width = textWidth * repWidth;
-		textureCanvas.height = textHeight * repHeight;
-		var ctx = textureCanvas.getContext('2d');
-		ctx.fillStyle = '#ffffff';
-		ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-		ctx.fillStyle = '#000000';
-		ctx.textAlign = 'center';
-		ctx.textBaseline = 'middle';
-		var e = 0;
-		//Cayley-Dickson construction in modulo order is e1,e2,e5,e3,e7,e6,-e4
-		//alternating every-other-one is the following:
-		var indexes = [1,5,7,4,2,3,6,0];
-		for (var j = 0; j < repHeight; ++j) {
-			for (var i = 0; i < repWidth; ++i) {
-				ctx.font = Math.floor(textWidth*.7)+'px monospace';
-				ctx.fillText('e', (i + .5) * textWidth, (j + .4) * textHeight);
-				ctx.font = Math.floor(textWidth*.35)+'px monospace';
-				ctx.fillText(indexes[e], (i + .8) * textWidth, (j + .8) * textHeight - 8);
-				if (indexes[e] === 4) {	//four is negative
-					ctx.font = Math.floor(textWidth*.4)+'px monospace';
-					ctx.fillText('-', (i + .175) * textWidth, (j + .4) * textHeight);
-				}
-				++e;
-			}
-		}
+	textTex = new glutil.Texture2D({
+		level : 0,
+		internalFormat : gl.RGBA,
+		format : gl.RGBA,
+		type : gl.UNSIGNED_BYTE,
+		data : ctx.canvas,
+		minFilter : gl.LINEAR_MIPMAP_LINEAR,
+		magFilter : gl.LINEAR,
+		generateMipmap : true,
+	});
 	
-		textTex = new glutil.Texture2D({
-			level : 0,
-			internalFormat : gl.RGBA,
-			format : gl.RGBA,
-			type : gl.UNSIGNED_BYTE,
-			data : ctx.canvas,
-			minFilter : gl.LINEAR_MIPMAP_LINEAR,
-			magFilter : gl.LINEAR,
-			generateMipmap : true,
-		});
-		
-		$(textureCanvas).remove();
-	})();
+	removeFromParent(textureCanvas);
+}
 
-	gl.clearColor(1,1,1,1);
-	gl.enable(gl.DEPTH_TEST);
+gl.clearColor(1,1,1,1);
+gl.enable(gl.DEPTH_TEST);
 
-	glutil.view.pos[2] = 2;
-	glutil.view.fovY = 60;
-	glutil.view.zNear = .1;
-	glutil.view.zFar = 100;
-	glutil.updateProjection();
+glutil.view.pos[2] = 2;
+glutil.view.fovY = 60;
+glutil.view.zNear = .1;
+glutil.view.zFar = 100;
+glutil.updateProjection();
 
-	var shader = new glutil.ShaderProgram({
-		vertexPrecision : 'best',
-		vertexCode : mlstr(function(){/*
-attribute vec2 vertex;
+let shader = new glutil.Program({
+	vertexCode : `
+in vec2 vertex;
 uniform mat4 mvMat, projMat;
-varying vec2 texcoord;
+out vec2 texcoord;
 
 vec3 quatRotate(vec4 q, vec3 v){
 	return v + 2. * cross(cross(v, q.xyz) - q.w * v, q.xyz);
@@ -104,11 +105,9 @@ void main() {
 	r = vecRotate(r, 0., 0., 1., radians(360. * u));
 	gl_Position = projMat * mvMat * vec4(r, 1.);
 }
-*/}),
-		fragmentPrecision : 'best',
-		fragmentCode : mlstr(function(){/*
-#extension GL_OES_standard_derivatives : enable
-varying vec2 texcoord;
+`,
+	fragmentCode : `
+in vec2 texcoord;
 
 //https://www.opengl.org/discussion_boards/showthread.php/164734-Deferred-shading?p=1164077#post1164077
 
@@ -148,6 +147,7 @@ uniform sampler2D textTex;
 
 float mod1(float x) { return x - floor(x); }
 
+out vec4 fragColor;
 void main() {
 	float u = texcoord.x;
 	float v = texcoord.y;
@@ -175,9 +175,9 @@ void main() {
 		if (len <= 1.) {
 			if (len <= .95) {
 				tc.x = 1. - tc.x;
-				gl_FragColor = texture2D(textTex, tc * vec2(.25, .5) + letterOffset);
+				fragColor = texture(textTex, tc * vec2(.25, .5) + letterOffset);
 			} else { 
-				gl_FragColor = vec4(0.);
+				fragColor = vec4(0.);
 			}
 			return;
 		}
@@ -189,9 +189,9 @@ void main() {
 		if (len <= 1.) {
 			if (len <= .95) {
 				tc.x = 1. - tc.x;
-				gl_FragColor = texture2D(textTex, tc * vec2(.25, .5) + letterOffset);
+				fragColor = texture(textTex, tc * vec2(.25, .5) + letterOffset);
 			} else {
-				gl_FragColor = vec4(0.);
+				fragColor = vec4(0.);
 			}
 			return;
 		}
@@ -202,7 +202,7 @@ void main() {
 	float ic = mod1(.5 * (ix + iy));
 
 	if (ic == 0.) {
-		gl_FragColor = vec4(1., 0., 0., 1.);
+		fragColor = vec4(1., 0., 0., 1.);
 	} else {
 		discard;
 	}
@@ -213,96 +213,94 @@ void main() {
 	vec3 t = dFdy(screenCoord);
 	vec3 n = normalize(cross(s, t));
 	float l = max(n.z, .3);
-	gl_FragColor *= l;
+	fragColor *= l;
 }
-*/}),
-		uniforms : {
-			offset : 0,
-			textTex : 0
-		},
-	});
+`,
+	uniforms : {
+		offset : 0,
+		textTex : 0
+	},
+});
 
-	var xRes = 200;
-	var yRes = 10;
-	var vertexBufferData = new Float32Array(2 * xRes * yRes);
-	var e = 0;
-	for (var j = 0; j < yRes; ++j) {
-		for (var i = 0; i < xRes; ++i) {
-			vertexBufferData[e++] = i/(xRes-1);
-			vertexBufferData[e++] = j/(yRes-1);
+let xRes = 200;
+let yRes = 10;
+let vertexBufferData = new Float32Array(2 * xRes * yRes);
+let e = 0;
+for (let j = 0; j < yRes; ++j) {
+	for (let i = 0; i < xRes; ++i) {
+		vertexBufferData[e++] = i/(xRes-1);
+		vertexBufferData[e++] = j/(yRes-1);
+	}
+}
+
+let vertexBuffer = new glutil.ArrayBuffer({
+	dim : 2,
+	data : vertexBufferData,
+});
+
+let s = Math.sqrt(.5);
+let mobiusStripObj = new glutil.SceneObject({
+	pos : [0,0,0],
+	angle : quat.mul([], [0,-s,0,s], [s,0,0,s]),
+	static : false
+});
+
+for (let j = 0; j < yRes-1; ++j) {
+	let indexes = [];
+	for (let i = 0; i < xRes; ++i) {
+		for (let ofs = 0; ofs < 2; ++ofs) {
+			indexes.push(i + xRes * (j + ofs));
 		}
 	}
-
-	var vertexBuffer = new glutil.ArrayBuffer({
-		dim : 2,
-		data : vertexBufferData,
-	});
-
-	var s = Math.sqrt(.5);
-	var mobiusStripObj = new glutil.SceneObject({
-		pos : [0,0,0],
-		angle : quat.mul([], [0,-s,0,s], [s,0,0,s]),
-		static : false
-	});
-
-	for (var j = 0; j < yRes-1; ++j) {
-		var indexes = [];
-		for (var i = 0; i < xRes; ++i) {
-			for (var ofs = 0; ofs < 2; ++ofs) {
-				indexes.push(i + xRes * (j + ofs));
-			}
-		}
-		new glutil.SceneObject({
-			mode : gl.TRIANGLE_STRIP,
-			indexes : new glutil.ElementArrayBuffer({data:indexes}),
-			shader : shader,
-			attrs : {
-				vertex : vertexBuffer,
-			},
-			texs : [textTex],
-			parent : mobiusStripObj
-		});
-	}
-
-	var tmpQ = quat.create();
-	var lastMouseRot = quat.create();
-	var offset = 0;
-	mouse = new Mouse3D({
-		pressObj : canvas,
-		move : function(dx,dy) {
-			var rotAngle = -Math.PI / 180 * .1 * Math.sqrt(dx*dx + dy*dy);
-			quat.setAxisAngle(tmpQ, [-dy, -dx, 0], rotAngle);
-			
-			quat.mul(lastMouseRot, glutil.view.angle, tmpQ);
-			quat.conjugate(tmpQ, glutil.view.angle);
-			quat.mul(lastMouseRot, lastMouseRot, tmpQ);
-
-			quat.mul(mobiusStripObj.angle, lastMouseRot, mobiusStripObj.angle);
-			quat.normalize(mobiusStripObj.angle, mobiusStripObj.angle);
-			
-			glutil.draw();
+	new glutil.SceneObject({
+		mode : gl.TRIANGLE_STRIP,
+		indexes : new glutil.ElementArrayBuffer({data:indexes}),
+		shader : shader,
+		attrs : {
+			vertex : vertexBuffer,
 		},
-		zoom : function(dz, method) {
-			offset += .0001 * dz;
-			if (method == 'wheel') {
-				$.each(mobiusStripObj.children, function(i,child) {
-					child.uniforms.offset = offset;
-					child.uniforms.textTex = 0;
-				});
-			} else {	//click+drag?
-				glutil.view.fovY *= Math.exp(-.0003 * dz);
-				glutil.view.fovY = Math.clamp(glutil.view.fovY, 1, 179);
-				glutil.updateProjection();
-			}
-			glutil.draw();
-		}
+		texs : [textTex],
+		parent : mobiusStripObj
 	});
+}
 
-	update();
+let tmpQ = quat.create();
+let lastMouseRot = quat.create();
+let offset = 0;
+const mouse = new Mouse3D({
+	pressObj : canvas,
+	move : function(dx,dy) {
+		let rotAngle = -Math.PI / 180 * .1 * Math.sqrt(dx*dx + dy*dy);
+		quat.setAxisAngle(tmpQ, [-dy, -dx, 0], rotAngle);
+		
+		quat.mul(lastMouseRot, glutil.view.angle, tmpQ);
+		quat.conjugate(tmpQ, glutil.view.angle);
+		quat.mul(lastMouseRot, lastMouseRot, tmpQ);
+
+		quat.mul(mobiusStripObj.angle, lastMouseRot, mobiusStripObj.angle);
+		quat.normalize(mobiusStripObj.angle, mobiusStripObj.angle);
+		
+		glutil.draw();
+	},
+	zoom : function(dz, method) {
+		offset += .0001 * dz;
+		if (method == 'wheel') {
+			mobiusStripObj.children.forEach(child => {
+				child.uniforms.offset = offset;
+				child.uniforms.textTex = 0;
+			});
+		} else {	//click+drag?
+			glutil.view.fovY *= Math.exp(-.0003 * dz);
+			glutil.view.fovY = Math.clamp(glutil.view.fovY, 1, 179);
+			glutil.updateProjection();
+		}
+		glutil.draw();
+	}
 });
 
 function update() {
 	glutil.draw();
-	requestAnimFrame(update);
+	requestAnimationFrame(update);
 }
 
+update();
