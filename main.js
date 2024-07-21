@@ -1,14 +1,15 @@
 import {quat} from '/js/gl-matrix-3.4.1/index.js';
-import {DOM, getIDs, removeFromParent, show} from '/js/util.js';
+import {DOM, getIDs, removeFromParent, hidden, hide, show} from '/js/util.js';
 import {GLUtil} from '/js/gl-util.js';
 import {Mouse3D} from '/js/mouse3d.js';
 const ids = getIDs();
 
 let glutil, gl;
-const canvas = ids.canvas;
+let canvas;
 
 try {
-	glutil = new GLUtil({canvas:canvas});
+	glutil = new GLUtil({fullscreen:true});
+	canvas = glutil.canvas;
 	gl = glutil.context;
 } catch (e) {
 	console.log('caught',e);
@@ -302,5 +303,14 @@ function update() {
 	glutil.draw();
 	requestAnimationFrame(update);
 }
+
+ids.infoButton.addEventListener('click', e => {
+	if (hidden(ids.info)) {
+		show(ids.info);
+		hide(ids.panel);
+	} else {
+		hide(ids.info);
+	}
+});
 
 update();
