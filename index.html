@@ -1,0 +1,55 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8"/>
+		<link type="text/css" rel="stylesheet" href="/main.css"/>
+		<link rel="shortcut icon" href="/favicon.ico"/>
+		<title></title>
+
+		<script type="text/javascript">
+// mathjax config
+// https://docs.mathjax.org/en/latest/web/configuration.html
+MathJax = {
+	tex: {
+		inlineMath: [['$', '$'], ['\\(', '\\)']]
+	},
+	svg: {
+		fontCache: 'global'
+	}
+};
+		</script>
+		<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/1.9.1/showdown.min.js" integrity="sha512-L03kznCrNOfVxOUovR6ESfCz9Gfny7gihUX/huVbQB9zjODtYpxaVtIaAkpetoiyV2eqWbvxMH9fiSv5enX7bw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+	</head>
+	<body>
+		<div id='webglfail' style='display:none'>
+			Sorry, your browser does not support WebGL<br>
+			<br>
+			<img width=800 height=600 src='images/screenshot.png'></img><br>
+		</div>
+		<div class='entry'>
+
+			<div style='width:100%; float:right; text-align:right; font-size:10pt; opacity:.7; line-height:1.2em'>
+				Click and drag to rotate<br>
+				Shift + click and drag to zoom<br>
+				Mouse wheel to scroll surface<br>
+			</div>
+
+			<div id='menu' style='position:absolute'>
+			<button id='infoButton' style='background-color:black; color:white; width:24px; height:24px; border:1px solid white; cursor:pointer; display:table-cell; align:center; vertical-align:top; margin:5px'>?</button><br>
+			</div>
+			<div id='info' style='display:none; overflow:scroll; top:32px; z-index:1; position:absolute; background-color:rgba(255,255,255,.85); color:black; padding:10px'>
+				Here is the <a href='https://en.wikipedia.org/wiki/Octonion'>octonion</a> multiplication table drawn on a <a href='https://en.wikipedia.org/wiki/M%C3%B6bius_strip'>Möbius strip</a>.<br>
+				Each red triangle represents a <a href='https://en.wikipedia.org/wiki/Quaternion'>quaternionic</a> triplet.<br>
+				A right-handed rotation around the triangle follows the multiplication identities.<br>
+				So the triangle \( e_1, e_2, e_3 \) represents the identities \( e_1 \cdot e_2 = e_3 \), \(e_2 \cdot e_3 = e_1\), and \(e_3 \cdot e_1 = e_2\).<br>
+				<br>
+				The vertices match up on either side of the Möbius strip.<br>
+				On alternating sides are triangles skewed in opposing directions.<br>
+				<br>
+			</div>
+
+			<script type='module' src='main.js' defer></script>
+		</div>
+	</body>
+</html>
