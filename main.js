@@ -1,5 +1,6 @@
 import {quat} from '/js/gl-matrix-3.4.1/index.js';
-import {DOM, getIDs, removeFromParent, hidden, hide, show} from '/js/util.js';
+import {Canvas} from '/js/dom.js';
+import {mathClamp, getIDs, removeFromParent, hidden, hide, show} from '/js/util.js';
 import {GLUtil} from '/js/gl-util.js';
 import {Mouse3D} from '/js/mouse3d.js';
 const ids = getIDs();
@@ -19,7 +20,7 @@ try {
 
 let textTex;
 {
-	const textureCanvas = DOM('canvas', {appendTo:document.body});
+	const textureCanvas = Canvas({appendTo:document.body});
 	const textWidth = 64;
 	const textHeight = 64;
 	const repWidth = 4;
@@ -292,7 +293,7 @@ const mouse = new Mouse3D({
 			});
 		} else {	//click+drag?
 			glutil.view.fovY *= Math.exp(-.0003 * dz);
-			glutil.view.fovY = Math.clamp(glutil.view.fovY, 1, 179);
+			glutil.view.fovY = mathClamp(glutil.view.fovY, 1, 179);
 			glutil.updateProjection();
 		}
 		glutil.draw();
