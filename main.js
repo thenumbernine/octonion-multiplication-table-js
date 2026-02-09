@@ -1,7 +1,7 @@
 import {quat} from '/js/gl-matrix-3.4.1/index.js';
 import {Canvas} from '/js/dom.js';
 import {mathClamp, getIDs, removeFromParent, hidden, hide, show} from '/js/util.js';
-import {GLUtil} from '/js/gl-util.js';
+import {GLUtil} from '/js/gl/gl.js';
 import {Mouse3D} from '/js/mouse3d.js';
 const ids = getIDs();
 
